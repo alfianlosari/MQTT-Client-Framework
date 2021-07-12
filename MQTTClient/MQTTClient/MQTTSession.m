@@ -1596,9 +1596,15 @@ NSString * const MQTTSessionErrorDomain = @"MQTT";
 
 - (void)mqttTransportDidClose:(id<MQTTTransport>)mqttTransport {
     DDLogVerbose(@"[MQTTSession] mqttTransport mqttTransportDidClose");
-
-    [self error:MQTTSessionEventConnectionClosedByBroker error:nil];
-
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(self.queue, ^{
+        if (weakSelf != nil) {
+            if (weakSelf.status == MQTTSessionStatusClosed || weakSelf.status == MQTTSessionStatusDisconnecting) {
+                return;
+            }
+            [weakSelf error:MQTTSessionEventConnectionClosedByBroker error:nil];
+        }
+    });
 }
 
 - (void)mqttTransportDidOpen:(id<MQTTTransport>)mqttTransport {
